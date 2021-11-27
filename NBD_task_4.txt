@@ -1,0 +1,38 @@
+1) MATCH paths = allShortestPaths((start:town{ name: 'Darjeeling' })-[*]-(end:peak{name: 'Sandakphu' }))WHERE ALL (p IN relationships(paths) WHERE p.winter = "true")RETURN paths
+
+2) MATCH p=(start:town{ name: 'Darjeeling' })-[*]->(end:peak{ name: 'Sandakphu' })WITH p, REDUCE(w=0,x IN relationships(p) | w+x.distance) AS distance RETURN p, distance ORDER BY distance
+
+3) MATCH p=(start:town{ name: 'Darjeeling' })-[:twowheeler*{summer:'true'}]->(end) RETURN end
+
+4) MATCH p=(a:Airport)<-[:ORIGIN]-(f:Flight)
+RETURN a, count(f) as flights
+ORDER BY flights ASC
+
+5) MATCH path = (origin:Airport { name:"LAX" })<-[:ORIGIN|DESTINATION*..5]->(destination:Airport)
+WHERE REDUCE(s = 0, n IN [x IN NODES(path) WHERE 'Flight' IN LABELS(x)] |
+  s + [(n)<-[:ASSIGN]-(ticket) | ticket.price][0]
+  ) < 3000
+RETURN path
+
+6) MATCH p = (a1:Airport { name:'LAX' })<-[:ORIGIN]-(:Flight)-[:ORIGIN|DESTINATION*..10]->(a2:Airport {name: 'DAY'})
+WITH p, REDUCE(acc = 0, n IN [x IN NODES(p) WHERE 'Flight' IN LABELS(x)] |
+  acc + [(n)<-[:ASSIGN]-(ticket) | ticket.price][0]
+  ) as price
+RETURN p, price
+ORDER BY price desc
+
+7) MATCH p = (:Airport { name:"LAX" })<-[:ORIGIN]-(:Flight)-[:ORIGIN|DESTINATION*..10]->(:Airport {name: "DAY"})
+WITH p, REDUCE(acc = 0, n IN [x IN NODES(p) WHERE 'Flight' IN LABELS(x)] |
+  acc + [(n)<-[:ASSIGN]-(ticket) | ticket.price][0]
+  ) as price
+RETURN p, price
+ORDER BY price asc LIMIT 1
+
+8)MATCH p = (:Airport { name:"LAX" })<-[:ORIGIN]-(:Flight)-[:ORIGIN|DESTINATION*..10]->(:Airport {name: "DAY"})
+WITH p, REDUCE(acc = 0, n IN [x IN NODES(p) WHERE 'Flight' IN LABELS(x)] |
+  acc + [(n)<-[:ASSIGN]-(ticket {class: 'business'}) | ticket.price][0]
+  ) as price
+RETURN p, price
+ORDER BY price asc LIMIT 1
+
+10) MATCH path = (a1:Airport)<-[:ORIGIN]-(:Flight)-[:DESTINATION]->(a2:Airport)<-[:ORIGIN]-(:Flight)-[:DESTINATION]->(a3:Airport) WHERE a1<>a3 with reduce (s=0, n IN [x IN NODES(path) WHERE 'Flight' IN LABELS(x)] | s + [(n)<-[:ASSIGN]-(ticket) | ticket.price][0]) as price,path RETURN path, price ORDER BY price asc limit 1
